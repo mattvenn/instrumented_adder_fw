@@ -1,0 +1,7 @@
+*hex
+*hexe
+*swp
+*lst
+*orig
+/*/generated/*
+__pycache__
