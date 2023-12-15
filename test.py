@@ -5,6 +5,13 @@ import serial
 port = '/dev/serial/by-id/usb-Arduino_Nano_33_BLE_3C48BB3E0BD44A03-if00'
 port = '/dev/serial/by-id/usb-Arduino_LLC_Arduino_Leonardo-if00' 
 
+adders = {
+    2: 'behavioural',
+    3: 'sklansky',
+    4: 'brent kung',
+    5: 'ripple',
+    6: 'kogge' 
+}
 
 def add(a, b):
     ser.write(b'a')
@@ -24,7 +31,7 @@ def select_project(p):
     ser.write(str(p).encode())
     resp = ser.readline()
     assert resp == f'set project to  00{p}\r\n'.encode()
-    print(f"set project to {p}")
+    print(f"set project to {adders[p]}")
 
 def test_all_adders(ser):
     for project in [2,3,4,5,6]:
@@ -54,7 +61,7 @@ def test_integration_time(ser):
     print("done")
 
 def test_in_out_bit(ser, in_bit=1, out_bit=12):
-    print(f"test adder in ring with in_bit_index {in_bit} and out_bit_index {out_bit}")
+#    print(f"test adder in ring with in_bit_index {in_bit} and out_bit_index {out_bit}")
     ser.write(b'u')
     resp = ser.readline()
     assert resp == b'test adder in ring. set in bit:\r\n'
@@ -83,12 +90,16 @@ def test_in_out_bit(ser, in_bit=1, out_bit=12):
 
     resp = ser.readline()
     assert resp == b'done\r\n'
-    print(f"average over 20 was {integration_total / 20}")
+    #print(f"average over 20 was {integration_total / 20}")
+    return integration_total / 20
 
 if __name__ == '__main__':
     with serial.Serial(port, 9600, timeout=2) as ser:
         # test_all_adders(ser)
 #        test_integration_time(ser)
-        select_project(2)
+        select_project(4)
+        print("running in/out bit adder test")
+        in_bit = 1
         for out_bit in range(0,32,4):
-            test_in_out_bit(ser, in_bit = 1, out_bit=out_bit)
+            integration_count = test_in_out_bit(ser, in_bit = in_bit, out_bit=out_bit)
+            print(f"{in_bit:2}, {out_bit:2}, {integration_count}")
