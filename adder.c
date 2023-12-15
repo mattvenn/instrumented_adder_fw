@@ -74,6 +74,23 @@ int wait_for_char()
 
 void set_mux(unsigned char reg_sel, unsigned int value)
 {
+    bool debug = false;
+    if(debug)
+    {
+    print("setting reg ");
+    switch(reg_sel)
+    {
+        case A_INPUT: 	        print("a input          "); break;
+        case B_INPUT:           print("b input          "); break;
+        case S_OUTPUT_BIT:      print("s output bit     "); break;
+        case A_INPUT_EXT_BIT:   print("a input ext bit  "); break;
+        case A_INPUT_RING_BIT:  print("a input ring bit "); break;
+        case SUM:               print("sum              "); break;
+    }
+    print(" to 0x");
+    print_hex(value, 8);
+    print("\n");
+    }
     reg_la1_data = (reg_la1_data & ~REG_SEL_MASK) | ((reg_sel << 9) & REG_SEL_MASK);
     reg_la3_data = value;
     SET(reg_la1_data, MUX_WRITE);
@@ -187,44 +204,41 @@ unsigned long read32bit()
     return a;
 }
 
-void test_adder_in_ring(int bits)
+unsigned int read8bit()
+{
+    unsigned int a = 0;
+    char c = 0;
+    int i = 0;
+    print("waiting for 2 characters\n");
+    for(i = 0; i < 2; i++)
+    {
+        c = wait_for_char() - 48;
+        if(c > 10)
+            c -= 39;
+        a += pow(c, 1-i);
+    }
+    return a;
+}
+
+void test_adder_in_ring(unsigned int adder_in_bit_index, unsigned int adder_out_bit_index)
 {
     // hold in reset
     SET(reg_la1_data, RESET);
     // stop the ring
     CLR(reg_la1_data, STOP_B);
 
-    if(bits)
-    {
     // setup for 2 bit
     // set a & b input to be 0
-    set_mux(A_INPUT, 0x0006); // 110
-    set_mux(B_INPUT, 0x0001); // 001
+    set_mux(A_INPUT, 0x0001);
+    set_mux(B_INPUT, 0xFFFFFFFF);
 
     // disable extra inverter
     CLR(reg_la1_data, EXTRA_INV);
 
     // set control pins up include adder
-    set_mux(A_INPUT_EXT_BIT,     0xFFFFFFFF ^ 0x0006);      // which bits to allow through from a input
-    set_mux(A_INPUT_RING_BIT,    0xFFFFFFFF ^ 1 << 0 );     // which bit the ring enters the a input of adder
-    set_mux(S_OUTPUT_BIT,        0xFFFFFFFF ^ 1 << 2 );     // which bit of the adder's sum goes back to the ring
-    }
-    else
-    {
-
-    // setup for 0 bit
-    // set a & b input to be 0
-    set_mux(A_INPUT, 0x0000); // 110
-    set_mux(B_INPUT, 0x0000); // 001
-
-    // disable extra inverter
-    SET(reg_la1_data, EXTRA_INV);
-
-    // set control pins up include adder
-    set_mux(A_INPUT_EXT_BIT,     0xFFFFFFFF ^ 0x0000);      // which bits to allow through from a input
-    set_mux(A_INPUT_RING_BIT,    0xFFFFFFFF ^ 1 << 0 );     // which bit the ring enters the a input of adder
-    set_mux(S_OUTPUT_BIT,        0xFFFFFFFF ^ 1 << 0 );     // which bit of the adder's sum goes back to the ring
-    }
+    set_mux(S_OUTPUT_BIT,        0xFFFFFFFF ^ 1 << adder_out_bit_index -1);     // which bit of the adder's sum goes back to the ring
+    set_mux(A_INPUT_EXT_BIT,     0x00000000 ^ 1 << adder_in_bit_index  -1);       // which bits to allow through from a input
+    set_mux(A_INPUT_RING_BIT,    0xFFFFFFFF ^ 1 << adder_in_bit_index  -1);     // which bit the ring enters the a input of adder
 
     // disable control loop
     SET(reg_la1_data, CONTROL_B);
@@ -248,11 +262,7 @@ void test_adder_in_ring(int bits)
             break;
     }
 
-    // set the ring osc value onto the pins
-    //reg_mprj_datal = reg_la2_data_in << RING_OUT_BIT0;
-
-    // set done on the mprj pins
-//    reg_mprj_datal |= 1 << FW_DONE;
+    // print the count
     print("0x");
     print_hex(reg_la2_data_in, 8);
     print("\n");
@@ -461,21 +471,21 @@ void main()
                 test_ring_osc(1, 1);
                 break;
             case 'u':
-                print("test adder in ring\n");
-                print("running 20x adder\n");
+                print("test adder in ring. set in bit:\n");
+                a = read8bit();
+                print("set out bit:\n");
+                b = read8bit();
+                print("running 20x adder with in bit 0x");
+                print_hex(a, 2);
+                print(" and out bit 0x");
+                print_hex(b, 2);
+                print("\n");
                 for(i = 0 ; i < 20; i ++)
-                    test_adder_in_ring(0);
-                print("done\n");
-                break;
-            case 'v':
-                print("test adder bits in ring\n");
-                print("running 20x adder\n");
-                for(i = 0 ; i < 20; i ++)
-                    test_adder_in_ring(1);
+                    test_adder_in_ring(a, b);
                 print("done\n");
                 break;
             default:
-                print("p: select project\nb: run with bypass\nc: run with control\nu: test adder in ring\n");
+                print("a: test adder\np: select project\nc: run with control\nb: run with bypass\ni: test integration counter\nt: test ring oscillator\nu: test adder in ring\n");
                 break;
         }
     }

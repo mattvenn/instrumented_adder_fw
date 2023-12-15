@@ -53,7 +53,42 @@ def test_integration_time(ser):
         assert resp == b'done\r\n'
     print("done")
 
+def test_in_out_bit(ser, in_bit=1, out_bit=12):
+    print(f"test adder in ring with in_bit_index {in_bit} and out_bit_index {out_bit}")
+    ser.write(b'u')
+    resp = ser.readline()
+    assert resp == b'test adder in ring. set in bit:\r\n'
+
+    resp = ser.readline()
+    assert resp == b'waiting for 2 characters\r\n'
+
+    in_bit_hex = f"{in_bit:02x}"
+    ser.write(in_bit_hex.encode())
+    resp = ser.readline()
+    assert resp == b'set out bit:\r\n'
+
+    resp = ser.readline()
+    assert resp == b'waiting for 2 characters\r\n'
+
+    out_bit_hex = f"{out_bit:02x}"
+    ser.write(out_bit_hex.encode())
+    resp = ser.readline()
+    assert resp == f'running 20x adder with in bit 0x{in_bit_hex} and out bit 0x{out_bit_hex}\r\n'.encode()
+
+    integration_total = 0
+    for i in range(20):
+        resp = ser.readline()
+        integration_count = int(resp.decode().strip(), 16)
+        integration_total += integration_count
+
+    resp = ser.readline()
+    assert resp == b'done\r\n'
+    print(f"average over 20 was {integration_total / 20}")
+
 if __name__ == '__main__':
     with serial.Serial(port, 9600, timeout=2) as ser:
         # test_all_adders(ser)
-        test_integration_time(ser)
+#        test_integration_time(ser)
+        select_project(2)
+        for out_bit in range(0,32,4):
+            test_in_out_bit(ser, in_bit = 1, out_bit=out_bit)
