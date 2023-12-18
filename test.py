@@ -60,8 +60,8 @@ def test_integration_time(ser):
         assert resp == b'done\r\n'
     print("done")
 
-def test_in_out_bit(ser, in_bit=1, out_bit=12):
-#    print(f"test adder in ring with in_bit_index {in_bit} and out_bit_index {out_bit}")
+def test_in_out_bit(ser, count, in_bit=1, out_bit=12):
+    print(f"test {count} x adder in ring with in_bit_index {in_bit} and out_bit_index {out_bit}")
     ser.write(b'u')
     resp = ser.readline()
     assert resp == b'test adder in ring. set in bit:\r\n'
@@ -80,41 +80,67 @@ def test_in_out_bit(ser, in_bit=1, out_bit=12):
     out_bit_hex = f"{out_bit:02x}"
     ser.write(out_bit_hex.encode())
     resp = ser.readline()
-    assert resp == f'running 20x adder with in bit 0x{in_bit_hex} and out bit 0x{out_bit_hex}\r\n'.encode()
+    assert resp == b'how many times:\r\n'
 
-    integration_total = 0
-    for i in range(20):
+    resp = ser.readline()
+    assert resp == b'waiting for 2 characters\r\n'
+
+    count_hex = f"{count:02x}"
+    ser.write(count_hex.encode())
+    resp = ser.readline()
+    assert resp == f'running 0x{count_hex} cycles of adder with in bit 0x{in_bit_hex} and out bit 0x{out_bit_hex}\r\n'.encode()
+
+    integrations = []
+    for i in range(count):
         resp = ser.readline()
-        integration_count = int(resp.decode().strip(), 16)
-        integration_total += integration_count
+        result = int(resp.decode().strip(), 16)
+#        print(result)
+        integrations.append(result)
 
     resp = ser.readline()
     assert resp == b'done\r\n'
-    #print(f"average over 20 was {integration_total / 20}")
-    return integration_total / 20
+    return integrations
 
-def test_bypass(ser):
+def test_bypass(ser, count):
+    print(f"bypass x {count}")
     ser.write(b'b')
     resp = ser.readline()
-    assert resp == b'testing 20x bypass\r\n'
-    integration_total = 0
-    for i in range(20):
+    assert resp == b'testing bypass. how many times:\r\n'
+
+    resp = ser.readline()
+    assert resp == b'waiting for 2 characters\r\n'
+
+    count_hex = f"{count:02x}"
+    ser.write(count_hex.encode())
+
+    integrations = []
+    for i in range(count):
         resp = ser.readline()
-        integration_count = int(resp.decode().strip(), 16)
-        integration_total += integration_count
+        result = int(resp.decode().strip(), 16)
+#        print(result)
+        integrations.append(result)
     resp = ser.readline()
     assert resp == b'done\r\n'
-    return integration_total / 20
+    return integrations
 
 if __name__ == '__main__':
     with serial.Serial(port, 9600, timeout=2) as ser:
         # test_all_adders(ser)
         # test_integration_time(ser)
-        for project in range(2,7):
+        count = 100
+        for project in range(3,7):
             select_project(project)
             print("running in/out bit adder test")
             in_bit = 0
+            bypass_int_count = test_bypass(ser, count)
+            adder_int_count = []
             for out_bit in range(0,32,4):
-                bypass_int_count = test_bypass(ser)
-                adder_int_count = test_in_out_bit(ser, in_bit = in_bit, out_bit=out_bit)
-                print(f"{in_bit:2}, {out_bit:2}, {adder_int_count}, {bypass_int_count}")
+                adder_int_count.append(test_in_out_bit(ser, count, in_bit = in_bit, out_bit=out_bit))
+            # print results
+            print(f"adder type {adders[project]}")
+            print(f"bypass, 0, 4, 8, 12, 16, 20, 24, 28")
+            for i in range(count):
+                print(f"{bypass_int_count[i]},", end="")
+                for c in adder_int_count:
+                    print(f"{c[i]},", end="")
+                print("")

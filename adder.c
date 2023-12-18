@@ -412,6 +412,7 @@ void main()
 
     unsigned long a;
     unsigned long b;
+    unsigned long c;
 
 	while (1) {
         reg_gpio_out = 1; // OFF
@@ -447,8 +448,9 @@ void main()
                 print("done\n");
                 break;
             case 'b':
-                print("testing 20x bypass\n");
-                for(i = 0 ; i < 20; i ++)
+                print("testing bypass. how many times:\n");
+                a = read8bit();
+                for(i = 0 ; i < a; i ++)
                     test_ring_osc(0, 1);
                 print("done\n");
                 break;
@@ -469,12 +471,16 @@ void main()
                 a = read8bit();
                 print("set out bit:\n");
                 b = read8bit();
-                print("running 20x adder with in bit 0x");
+                print("how many times:\n");
+                c = read8bit();
+                print("running 0x");
+                print_hex(c, 2);
+                print(" cycles of adder with in bit 0x");
                 print_hex(a, 2);
                 print(" and out bit 0x");
                 print_hex(b, 2);
                 print("\n");
-                for(i = 0 ; i < 20; i ++)
+                for(i = 0 ; i < c; i ++)
                     test_adder_in_ring(a, b);
                 print("done\n");
                 break;
