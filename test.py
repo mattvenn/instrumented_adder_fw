@@ -93,13 +93,28 @@ def test_in_out_bit(ser, in_bit=1, out_bit=12):
     #print(f"average over 20 was {integration_total / 20}")
     return integration_total / 20
 
+def test_bypass(ser):
+    ser.write(b'b')
+    resp = ser.readline()
+    assert resp == b'testing 20x bypass\r\n'
+    integration_total = 0
+    for i in range(20):
+        resp = ser.readline()
+        integration_count = int(resp.decode().strip(), 16)
+        integration_total += integration_count
+    resp = ser.readline()
+    assert resp == b'done\r\n'
+    return integration_total / 20
+
 if __name__ == '__main__':
     with serial.Serial(port, 9600, timeout=2) as ser:
         # test_all_adders(ser)
-#        test_integration_time(ser)
-        select_project(4)
-        print("running in/out bit adder test")
-        in_bit = 1
-        for out_bit in range(0,32,4):
-            integration_count = test_in_out_bit(ser, in_bit = in_bit, out_bit=out_bit)
-            print(f"{in_bit:2}, {out_bit:2}, {integration_count}")
+        # test_integration_time(ser)
+        for project in range(2,7):
+            select_project(project)
+            print("running in/out bit adder test")
+            in_bit = 1
+            for out_bit in range(0,32,4):
+                bypass_int_count = test_bypass(ser)
+                adder_int_count = test_in_out_bit(ser, in_bit = in_bit, out_bit=out_bit)
+                print(f"{in_bit:2}, {out_bit:2}, {adder_int_count}, {bypass_int_count}")

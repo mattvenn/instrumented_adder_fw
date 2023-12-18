@@ -408,7 +408,7 @@ void main()
     delay(4000000);
     reg_gpio_out = 0; // ON
     delay(4000000);
-    print("started\n");
+    print("started - make sure to enable a project before running other commands!\n");
 
     unsigned long a;
     unsigned long b;
@@ -447,13 +447,7 @@ void main()
                 print("done\n");
                 break;
             case 'b':
-                print("running 200 then 20x bypass\n");
-                for(i = 0 ; i < 200; i ++)
-                {
-                    print(".");
-                    test_ring_osc(0, 0);
-                }
-                print("\n");
+                print("testing 20x bypass\n");
                 for(i = 0 ; i < 20; i ++)
                     test_ring_osc(0, 1);
                 print("done\n");
