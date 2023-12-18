@@ -236,9 +236,9 @@ void test_adder_in_ring(unsigned int adder_in_bit_index, unsigned int adder_out_
     CLR(reg_la1_data, EXTRA_INV);
 
     // set control pins up include adder
-    set_mux(S_OUTPUT_BIT,        0xFFFFFFFF ^ 1 << adder_out_bit_index -1);     // which bit of the adder's sum goes back to the ring
-    set_mux(A_INPUT_EXT_BIT,     0x00000000 ^ 1 << adder_in_bit_index  -1);       // which bits to allow through from a input
-    set_mux(A_INPUT_RING_BIT,    0xFFFFFFFF ^ 1 << adder_in_bit_index  -1);     // which bit the ring enters the a input of adder
+    set_mux(S_OUTPUT_BIT,        0xFFFFFFFF ^ 1 << adder_out_bit_index );     // which bit of the adder's sum goes back to the ring
+    set_mux(A_INPUT_EXT_BIT,     0x00000000 ^ 1 << adder_in_bit_index  );       // which bits to allow through from a input
+    set_mux(A_INPUT_RING_BIT,    0xFFFFFFFF ^ 1 << adder_in_bit_index  );     // which bit the ring enters the a input of adder
 
     // disable control loop
     SET(reg_la1_data, CONTROL_B);

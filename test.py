@@ -113,7 +113,7 @@ if __name__ == '__main__':
         for project in range(2,7):
             select_project(project)
             print("running in/out bit adder test")
-            in_bit = 1
+            in_bit = 0
             for out_bit in range(0,32,4):
                 bypass_int_count = test_bypass(ser)
                 adder_int_count = test_in_out_bit(ser, in_bit = in_bit, out_bit=out_bit)
